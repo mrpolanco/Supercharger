@@ -1,0 +1,50 @@
+#!/bin/bash
+export PGUSER=postgres PGDATABASE=support
+for _ in $(seq 1 30); do pg_isready -q && break; sleep 1; done
+
+RESULTS=""
+add() {
+  local sep=""; [ -n "$RESULTS" ] && sep=","
+  if [ "$2" = "1" ]; then
+    RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":true}"
+  else
+    RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":false,\"hint\":\"$3\"}"
+  fi
+}
+
+check_task() { # file ref_query name hint
+  local file="$1" ref="$2" name="$3" hint="$4"
+  if [ ! -s "$file" ]; then
+    add "$name" 0 "Save your query to $file."
+    return
+  fi
+  local got want
+  got=$(psql -tA -v ON_ERROR_STOP=1 -f "$file" 2>/dev/null)
+  if [ $? -ne 0 ]; then
+    add "$name" 0 "SQL error in $file."
+    return
+  fi
+  want=$(psql -tA -c "$ref")
+  if [ "$(echo "$got" | sort | md5sum)" = "$(echo "$want" | sort | md5sum)" ]; then
+    add "$name" 1
+  else
+    add "$name" 0 "$hint"
+  fi
+}
+
+check_task /work/q1.sql \
+  "SELECT id, name FROM customers WHERE status IS DISTINCT FROM 'canceled'" \
+  "Q1: customers not known to be canceled" \
+  "Closed book — but the result set doesn't match. Think about which customers must be included."
+
+check_task /work/q2.sql \
+  "SELECT c.name, (SELECT o.amount FROM orders o WHERE o.customer_id = c.id AND o.status = 'paid' ORDER BY o.created_at DESC LIMIT 1) FROM customers c" \
+  "Q2: most recent paid order amount per customer (all customers)" \
+  "Every customer appears exactly once; the amount is from their latest PAID order, NULL if none."
+
+check_task /work/q3.sql \
+  "SELECT p.name, count(DISTINCT c.id) FROM plans p JOIN customers c ON c.plan_id = p.id JOIN orders o ON o.customer_id = c.id AND o.status = 'paid' GROUP BY p.name HAVING count(DISTINCT c.id) >= 2" \
+  "Q3: plans with 2+ distinct paying customers" \
+  "Result doesn't match. Watch for join row inflation and where the paid filter goes."
+
+echo "{\"checkpoints\":[$RESULTS]}"

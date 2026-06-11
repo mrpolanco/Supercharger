@@ -1,0 +1,6 @@
+{
+  "customerId": "cus_100",
+  "priority": "urgent",
+  "tags": "vip,login",
+  "summary": "Login failures after SSO change"
+}

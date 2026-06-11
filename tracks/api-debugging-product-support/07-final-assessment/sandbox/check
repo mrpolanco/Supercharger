@@ -1,0 +1,36 @@
+#!/bin/bash
+RESULTS=""
+add() {
+  local sep=""; [ -n "$RESULTS" ] && sep=","
+  if [ "$2" = "1" ]; then RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":true}"
+  else RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":false,\"hint\":\"$3\"}"; fi
+}
+
+for _ in $(seq 1 20); do
+  curl -sS http://127.0.0.1:8080 >/dev/null 2>&1 && break
+  sleep 0.2
+done
+
+if [ ! -s /work/final-request.sh ]; then
+  add "Final request script saved" 0 "Save the required request script."
+else
+  out=$(bash /work/final-request.sh 2>/tmp/final.err)
+  if echo "$out" | grep -q "201" && echo "$out" | grep -q "req_final_ok" && echo "$out" | grep -q "run_900"; then
+    add "Final request succeeds" 1
+  else
+    add "Final request succeeds" 0 "The saved request does not produce the expected successful response."
+  fi
+fi
+
+U=/work/customer-update.md
+if [ -s "$U" ] \
+  && grep -qi "422\|validation_failed\|input" "$U" \
+  && grep -q "req_final_422" "$U" \
+  && grep -qi "request-specific\|not.*platform\|not.*outage\|single.*request" "$U" \
+  && grep -qi "array\|list" "$U"; then
+  add "Customer update explains evidence and next step" 1
+else
+  add "Customer update explains evidence and next step" 0 "The update is missing required evidence or the next step."
+fi
+
+echo "{\"checkpoints\":[$RESULTS]}"

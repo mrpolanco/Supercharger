@@ -1,0 +1,38 @@
+#!/bin/bash
+RESULTS=""
+add() {
+  local sep=""; [ -n "$RESULTS" ] && sep=","
+  if [ "$2" = "1" ]; then RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":true}"
+  else RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":false,\"hint\":\"$3\"}"; fi
+}
+
+for _ in $(seq 1 20); do
+  curl -sS http://127.0.0.1:8080 >/dev/null 2>&1 && break
+  sleep 0.2
+done
+
+if [ ! -s /work/repro.sh ]; then
+  add "Message failure reproduced with curl" 0 "Save the curl reproduction to /work/repro.sh."
+else
+  out=$(bash /work/repro.sh 2>/tmp/msg.err)
+  if echo "$out" | grep -q "422" && echo "$out" | grep -q "missing_required_field" && echo "$out" | grep -q "req_msg_422"; then
+    add "Message failure reproduced with curl" 1
+  else
+    add "Message failure reproduced with curl" 0 "The reproduction should send the customer payload and capture status, error code, and request ID."
+  fi
+fi
+
+U=/work/ticket-update.md
+if [ -s "$U" ] \
+  && grep -qi "expected" "$U" \
+  && grep -qi "actual" "$U" \
+  && grep -q "422" "$U" \
+  && grep -q "missing_required_field" "$U" \
+  && grep -q "req_msg_422" "$U" \
+  && grep -qi "recipient_id" "$U"; then
+  add "Ticket update includes support-grade evidence" 1
+else
+  add "Ticket update includes support-grade evidence" 0 "Include expected vs actual behavior, status, error code, request ID, likely request issue, and next step."
+fi
+
+echo "{\"checkpoints\":[$RESULTS]}"

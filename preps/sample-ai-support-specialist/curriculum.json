@@ -1,0 +1,26 @@
+[
+  {
+    "id": "sql-fundamentals",
+    "kind": "existing",
+    "order": 1,
+    "modificationHints": "Posting emphasizes support investigations; use the missing-rows ticket and final assessment as screenshot-ready examples."
+  },
+  {
+    "id": "api-debugging-for-ai-support",
+    "kind": "requested",
+    "level": "beginner",
+    "order": 2
+  },
+  {
+    "id": "llm-api-support-fundamentals",
+    "kind": "requested",
+    "level": "intermediate",
+    "order": 3
+  },
+  {
+    "id": "enterprise-auth-networking-primer",
+    "kind": "requested",
+    "level": "beginner",
+    "order": 4
+  }
+]

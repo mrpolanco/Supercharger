@@ -1,0 +1,7 @@
+{
+  "customer_id": "cus_final",
+  "input": "summarize the attached ticket",
+  "metadata": {
+    "source": "support-workflow"
+  }
+}

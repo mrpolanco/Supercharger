@@ -1,0 +1,28 @@
+#!/bin/bash
+RESULTS=""
+add() {
+  local sep=""; [ -n "$RESULTS" ] && sep=","
+  if [ "$2" = "1" ]; then RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":true}"
+  else RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":false,\"hint\":\"$3\"}"; fi
+}
+
+S=/work/rate-limit-summary.md
+if [ -s "$S" ] \
+  && grep -q "429" "$S" \
+  && grep -qi "Retry-After.*30\|30.*Retry-After" "$S" \
+  && grep -q "req_rate_001" "$S" \
+  && grep -q "req_rate_002" "$S"; then
+  add "Summary captures rate-limit evidence" 1
+else
+  add "Summary captures rate-limit evidence" 0 "Include the 429 status, Retry-After value, and both request IDs from the captured responses."
+fi
+
+if [ -s "$S" ] \
+  && grep -qi "immediate\|too soon\|tight loop\|retry.*delay\|honor" "$S" \
+  && grep -qi "not.*platform\|single.*integration\|customer.*retry\|one.*integration" "$S"; then
+  add "Summary explains likely retry issue cautiously" 1
+else
+  add "Summary explains likely retry issue cautiously" 0 "Explain the likely retry behavior without turning one integration's 429s into a platform-wide outage claim."
+fi
+
+echo "{\"checkpoints\":[$RESULTS]}"

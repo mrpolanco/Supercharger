@@ -1,0 +1,52 @@
+#!/bin/bash
+# Prints the Supercharger checkpoint JSON. Compares the result set of each
+# /work/taskN.sql against a reference query (row order ignored, columns exact).
+export PGUSER=postgres PGDATABASE=support
+for _ in $(seq 1 30); do pg_isready -q && break; sleep 1; done
+
+RESULTS=""
+add() { # name pass hint
+  local sep=""; [ -n "$RESULTS" ] && sep=","
+  if [ "$2" = "1" ]; then
+    RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":true}"
+  else
+    RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":false,\"hint\":\"$3\"}"
+  fi
+}
+
+check_task() { # file ref_query name hint
+  local file="$1" ref="$2" name="$3" hint="$4"
+  if [ ! -s "$file" ]; then
+    add "$name" 0 "Save your query to $file."
+    return
+  fi
+  local got want
+  got=$(psql -tA -v ON_ERROR_STOP=1 -f "$file" 2>/dev/null)
+  if [ $? -ne 0 ]; then
+    add "$name" 0 "Your query in $file has a SQL error — run it in psql with \\\\i $file to see it."
+    return
+  fi
+  want=$(psql -tA -c "$ref")
+  if [ "$(echo "$got" | sort | md5sum)" = "$(echo "$want" | sort | md5sum)" ]; then
+    add "$name" 1
+  else
+    add "$name" 0 "$hint"
+  fi
+}
+
+check_task /work/task1.sql \
+  "SELECT id, name, email FROM customers WHERE status = 'active' AND region = 'EU'" \
+  "Task 1: active EU customers" \
+  "Expected columns id, name, email for customers with status 'active' AND region 'EU'. Compare your row count with the data."
+
+check_task /work/task2.sql \
+  "SELECT id, name FROM customers WHERE email IS NULL" \
+  "Task 2: customers with no email" \
+  "Remember: email = NULL never matches anything. Use IS NULL. Expected columns: id, name."
+
+check_task /work/task3.sql \
+  "SELECT id, status FROM customers WHERE status IS DISTINCT FROM 'canceled'" \
+  "Task 3: not-canceled report (NULL-safe)" \
+  "Customers with a NULL status must be INCLUDED. Either add OR status IS NULL, or use IS DISTINCT FROM 'canceled'. Expected columns: id, status."
+
+echo "{\"checkpoints\":[$RESULTS]}"

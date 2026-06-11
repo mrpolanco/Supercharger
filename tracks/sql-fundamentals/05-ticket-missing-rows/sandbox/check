@@ -1,0 +1,41 @@
+#!/bin/bash
+export PGUSER=postgres PGDATABASE=support
+for _ in $(seq 1 30); do pg_isready -q && break; sleep 1; done
+
+RESULTS=""
+add() {
+  local sep=""; [ -n "$RESULTS" ] && sep=","
+  if [ "$2" = "1" ]; then
+    RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":true}"
+  else
+    RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":false,\"hint\":\"$3\"}"
+  fi
+}
+
+# Checkpoint 1: fixed export returns all real (non-test) orders
+FILE=/work/export_fixed.sql
+if [ ! -s "$FILE" ]; then
+  add "Fixed export saved to /work/export_fixed.sql" 0 "Save your corrected export query to /work/export_fixed.sql."
+else
+  got=$(psql -tA -v ON_ERROR_STOP=1 -f "$FILE" 2>/dev/null)
+  if [ $? -ne 0 ]; then
+    add "Fixed export saved to /work/export_fixed.sql" 0 "The query has a SQL error — run it in psql with \\\\i $FILE."
+  else
+    want=$(psql -tA -c "SELECT acme_ref, amount, created_at FROM orders WHERE source IS DISTINCT FROM 'test' ORDER BY created_at")
+    if [ "$(echo "$got" | sort | md5sum)" = "$(echo "$want" | sort | md5sum)" ]; then
+      add "Fixed export returns every real order, no test orders" 1
+    else
+      add "Fixed export returns every real order, no test orders" 0 "The export must keep the same columns (acme_ref, amount, created_at), exclude the 3 test orders, and include ALL 12 real orders — including the recent ones."
+    fi
+  fi
+fi
+
+# Checkpoint 2: root cause names the mechanism
+RC=/work/root-cause.txt
+if [ -s "$RC" ] && grep -qi "null" "$RC"; then
+  add "Root cause documented in /work/root-cause.txt" 1
+else
+  add "Root cause documented in /work/root-cause.txt" 0 "Write 1-2 sentences naming the actual mechanism that dropped the rows. What value did the new orders have in the filtered column, and how does <> treat it?"
+fi
+
+echo "{\"checkpoints\":[$RESULTS]}"

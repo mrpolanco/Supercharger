@@ -1,0 +1,6 @@
+HTTP/1.1 429 Too Many Requests
+Content-Type: application/json
+Retry-After: 30
+X-Request-ID: req_rate_001
+
+{"error":{"code":"rate_limited","message":"Too many export requests. Retry after 30 seconds."}}

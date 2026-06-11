@@ -1,0 +1,2 @@
+description = "Generate the highest-priority pending track request"
+prompt = "Follow the instructions in prompts/next-track.md. Arguments: {{args}}"

@@ -1,0 +1,24 @@
+title: SQL Data Investigation for Support Engineers
+description: >-
+  Query production-style customer data to reproduce report discrepancies,
+  explain missing rows, and support data-quality investigations. Covers
+  SELECT/WHERE, NULL traps, joins, aggregation, and a closed-book support data
+  assessment.
+icon: disk
+level: beginner
+depth: standard
+author: Rich Polanco
+license: CC BY 4.0
+version: 1.0.0
+sourceUrl: https://github.com/mrpolanco/Supercharger
+tags:
+  - sql
+  - support
+  - data-investigation
+lessons:
+  - 01-thinking-in-tables
+  - 02-select-and-filter
+  - 03-joins
+  - 04-aggregation
+  - 05-ticket-missing-rows
+  - 06-final-assessment

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "api-debugging-for-ai-support",
+    "title": "API Debugging for AI Support",
+    "level": "beginner",
+    "depth": "standard",
+    "priority": "high",
+    "reason": "The posting emphasizes API reproduction, malformed payloads, auth failures, and customer-ready escalation notes.",
+    "status": "suggested",
+    "createdBy": "Codex"
+  },
+  {
+    "id": "llm-api-support-fundamentals",
+    "title": "LLM API Support Fundamentals",
+    "level": "intermediate",
+    "depth": "standard",
+    "priority": "high",
+    "reason": "The fictional resume has API support experience but no direct evidence of token, context-window, streaming, or model-response troubleshooting.",
+    "status": "suggested",
+    "createdBy": "Codex"
+  },
+  {
+    "id": "enterprise-auth-networking-primer",
+    "title": "Enterprise Auth and Networking Primer",
+    "level": "beginner",
+    "depth": "compact",
+    "priority": "medium",
+    "reason": "The posting lists SSO, OAuth, SAML, and enterprise networking as preferred depth; the sample resume only shows light exposure.",
+    "status": "suggested",
+    "createdBy": "Codex"
+  }
+]

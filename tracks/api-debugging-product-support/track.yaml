@@ -1,0 +1,26 @@
+title: API Debugging for Product Support Engineers
+description: >-
+  Reproduce customer API failures, inspect headers and JSON bodies, diagnose
+  auth and schema issues, reason about request IDs and rate limits, and write
+  support-ready customer updates and escalations.
+icon: world
+level: beginner
+depth: standard
+author: Rich Polanco
+license: CC BY 4.0
+version: 1.0.0
+sourceUrl: https://github.com/mrpolanco/Supercharger
+tags:
+  - api
+  - support
+  - troubleshooting
+  - customer-communication
+createdBy: Codex
+lessons:
+  - 01-reading-api-requests
+  - 02-reproduce-with-curl
+  - 03-auth-and-environments
+  - 04-json-body-validation
+  - 05-rate-limits-and-request-ids
+  - 06-ticket-integration-failing
+  - 07-final-assessment

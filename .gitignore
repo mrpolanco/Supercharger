@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.vite/
+progress.json
+resumes/
+.claude/settings.local.json
+.DS_Store
+__pycache__/
+*.pyc
+MARKETING.md
+.supercharger-local-access.json

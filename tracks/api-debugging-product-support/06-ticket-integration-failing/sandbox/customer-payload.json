@@ -1,0 +1,5 @@
+{
+  "customer_id": "cus_acme_health",
+  "channel": "email",
+  "body": "Your SSO reset is complete."
+}

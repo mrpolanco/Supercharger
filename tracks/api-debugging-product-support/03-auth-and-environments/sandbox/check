@@ -1,0 +1,34 @@
+#!/bin/bash
+RESULTS=""
+add() {
+  local sep=""; [ -n "$RESULTS" ] && sep=","
+  if [ "$2" = "1" ]; then RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":true}"
+  else RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":false,\"hint\":\"$3\"}"; fi
+}
+
+for _ in $(seq 1 20); do
+  curl -sS http://127.0.0.1:8080/v1/invoices/inv_200 >/dev/null 2>&1 && break
+  sleep 0.2
+done
+
+if [ ! -s /work/fixed-request.sh ]; then
+  add "Fixed production request saved" 0 "Save the corrected curl request to /work/fixed-request.sh."
+else
+  out=$(bash /work/fixed-request.sh 2>/tmp/fixed.err)
+  if echo "$out" | grep -q "200" && echo "$out" | grep -q "req_auth_ok" && echo "$out" | grep -q "inv_200"; then
+    add "Fixed request returns the production invoice" 1
+  else
+    add "Fixed request returns the production invoice" 0 "The corrected request should use the production token and capture headers for the invoice endpoint."
+  fi
+fi
+
+if [ -s /work/auth-findings.txt ] \
+  && grep -qi "401" /work/auth-findings.txt \
+  && grep -qi "invalid_api_key" /work/auth-findings.txt \
+  && grep -qi "test.*production\|environment\|wrong.*key" /work/auth-findings.txt; then
+  add "Auth findings explain environment mismatch" 1
+else
+  add "Auth findings explain environment mismatch" 0 "Write the failing status, error code, likely environment mismatch, and customer-safe next step."
+fi
+
+echo "{\"checkpoints\":[$RESULTS]}"

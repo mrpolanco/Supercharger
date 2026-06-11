@@ -1,0 +1,37 @@
+#!/bin/bash
+RESULTS=""
+add() {
+  local sep=""; [ -n "$RESULTS" ] && sep=","
+  if [ "$2" = "1" ]; then
+    RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":true}"
+  else
+    RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":false,\"hint\":\"$3\"}"
+  fi
+}
+
+for _ in $(seq 1 20); do
+  curl -sS http://127.0.0.1:8080/v1/orders/ord_missing >/dev/null 2>&1 && break
+  sleep 0.2
+done
+
+if [ ! -s /work/repro.sh ]; then
+  add "Reproduction script saved" 0 "Save the curl reproduction command to /work/repro.sh."
+else
+  out=$(bash /work/repro.sh 2>/tmp/repro.err)
+  if echo "$out" | grep -q "404" && echo "$out" | grep -q "X-Request-ID: req_repro_404"; then
+    add "Reproduction captures status and request ID" 1
+  else
+    add "Reproduction captures status and request ID" 0 "Run the failing order endpoint with headers included so the status and X-Request-ID are visible."
+  fi
+fi
+
+if [ -s /work/notes.txt ] \
+  && grep -qi "status=404" /work/notes.txt \
+  && grep -qi "request_id=req_repro_404" /work/notes.txt \
+  && grep -qi "not.*down\|single.*resource\|one.*resource\|resource-specific" /work/notes.txt; then
+  add "Cautious support notes written" 1
+else
+  add "Cautious support notes written" 0 "Write status, request_id, and a cautious conclusion that does not turn one resource-specific 404 into an outage claim."
+fi
+
+echo "{\"checkpoints\":[$RESULTS]}"

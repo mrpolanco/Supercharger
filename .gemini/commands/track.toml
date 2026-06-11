@@ -1,0 +1,2 @@
+description = "Generate a new track (skill curriculum) per SPEC.md"
+prompt = "Follow the instructions in prompts/track.md. Arguments: {{args}}"

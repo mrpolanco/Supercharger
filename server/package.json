@@ -1,0 +1,16 @@
+{
+  "name": "supercharger-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node index.js",
+    "postinstall": "cd \"$(node -e \"console.log(require.resolve('node-pty/package.json').replace('/package.json',''))\")\" && npx -y node-gyp rebuild || echo 'node-pty source rebuild failed; falling back to prebuilt binary'"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "js-yaml": "^4.1.0",
+    "node-pty": "^1.0.0",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,2 @@
+description = "Generate a job prep from preps/<id>/job-posting.md"
+prompt = "Follow the instructions in prompts/prep.md. Arguments: {{args}}"

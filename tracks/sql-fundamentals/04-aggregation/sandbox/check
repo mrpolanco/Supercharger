@@ -1,0 +1,50 @@
+#!/bin/bash
+export PGUSER=postgres PGDATABASE=support
+for _ in $(seq 1 30); do pg_isready -q && break; sleep 1; done
+
+RESULTS=""
+add() {
+  local sep=""; [ -n "$RESULTS" ] && sep=","
+  if [ "$2" = "1" ]; then
+    RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":true}"
+  else
+    RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":false,\"hint\":\"$3\"}"
+  fi
+}
+
+check_task() { # file ref_query name hint
+  local file="$1" ref="$2" name="$3" hint="$4"
+  if [ ! -s "$file" ]; then
+    add "$name" 0 "Save your query to $file."
+    return
+  fi
+  local got want
+  got=$(psql -tA -v ON_ERROR_STOP=1 -f "$file" 2>/dev/null)
+  if [ $? -ne 0 ]; then
+    add "$name" 0 "Your query in $file has a SQL error — run it in psql with \\\\i $file to see it."
+    return
+  fi
+  want=$(psql -tA -c "$ref")
+  if [ "$(echo "$got" | sort | md5sum)" = "$(echo "$want" | sort | md5sum)" ]; then
+    add "$name" 1
+  else
+    add "$name" 0 "$hint"
+  fi
+}
+
+check_task /work/task1.sql \
+  "SELECT c.name, sum(o.amount) FROM customers c JOIN orders o ON o.customer_id = c.id WHERE o.status = 'paid' GROUP BY c.name" \
+  "Task 1: paid revenue per customer" \
+  "Filter to paid orders in WHERE, GROUP BY the customer name, sum(amount). Only customers with at least one paid order should appear."
+
+check_task /work/task2.sql \
+  "SELECT region, count(*) FROM customers GROUP BY region HAVING count(*) > 2" \
+  "Task 2: regions with more than 2 customers" \
+  "GROUP BY region, then HAVING count(*) > 2 — the count filter must be HAVING (after grouping), not WHERE."
+
+check_task /work/task3.sql \
+  "SELECT c.name, coalesce(sum(o.amount), 0) FROM customers c LEFT JOIN orders o ON o.customer_id = c.id AND o.status = 'paid' GROUP BY c.name" \
+  "Task 3: revenue for ALL customers, 0 instead of NULL" \
+  "LEFT JOIN with the o.status = 'paid' condition in the ON clause, then coalesce(sum(amount), 0). Every customer must appear exactly once."
+
+echo "{\"checkpoints\":[$RESULTS]}"

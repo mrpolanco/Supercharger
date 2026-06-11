@@ -1,0 +1,33 @@
+#!/bin/bash
+RESULTS=""
+add() {
+  local sep=""; [ -n "$RESULTS" ] && sep=","
+  if [ "$2" = "1" ]; then RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":true}"
+  else RESULTS="$RESULTS$sep{\"name\":\"$1\",\"pass\":false,\"hint\":\"$3\"}"; fi
+}
+
+for _ in $(seq 1 20); do
+  curl -sS http://127.0.0.1:8080 >/dev/null 2>&1 && break
+  sleep 0.2
+done
+
+if [ ! -s /work/fixed-ticket.json ]; then
+  add "Fixed JSON body saved" 0 "Save the corrected payload to /work/fixed-ticket.json."
+else
+  out=$(curl -i -sS -H 'Content-Type: application/json' --data @/work/fixed-ticket.json http://127.0.0.1:8080/v1/tickets 2>/tmp/schema.err)
+  if echo "$out" | grep -q "201" && echo "$out" | grep -q "req_schema_ok" && jq -e '.customer_id=="cus_100" and .priority=="high" and (.tags|type=="array")' /work/fixed-ticket.json >/dev/null 2>&1; then
+    add "Fixed payload creates a ticket" 1
+  else
+    add "Fixed payload creates a ticket" 0 "The fixed body should use customer_id, an allowed priority, an array of tags, and a summary."
+  fi
+fi
+
+if [ -s /work/schema-summary.txt ] \
+  && grep -qi "valid json\|parses\|syntax" /work/schema-summary.txt \
+  && grep -qi "schema\|field\|type\|allowed" /work/schema-summary.txt; then
+  add "Schema summary distinguishes syntax from contract mismatch" 1
+else
+  add "Schema summary distinguishes syntax from contract mismatch" 0 "Explain that the original body parses as JSON but violates field names, types, or allowed values."
+fi
+
+echo "{\"checkpoints\":[$RESULTS]}"
